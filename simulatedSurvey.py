@@ -6,21 +6,20 @@ from datetime import datetime
 import numpy as np
 import cv2 as cv
 import constants, utils
-from picamera2 import Picamera2
 
 #! 1.----- CONNECT THE DRONE -----
 
 date_and_time = datetime.now()
 print("The current date and time of flight is", date_and_time)
 print("Trying to connect...")
-drone = connect(ip='/dev/ttyAMA0', wait_ready=True, baud=constants.BAUD) 
+drone = connect("tcp:127.0.0.1:5763", wait_ready=True) 
 print("Connected BOOYAH!")
 
 
 #! 2.----- TAKEOFF ------
 
 utils.arm_takeoff(drone, constants.TAKEOFF_ALTITUDE)
-utils.set_mode(drone, "AUTO")
+utils.set_mode(drone, "STABILIZE")
 
 #! 4.----- PICAM INIT -------
 
@@ -29,8 +28,8 @@ print("Begin PICAM setup")
 centerX = constants.WIDTH/2
 centerY = constants.HEIGHT/2
 out = cv.VideoWriter('output.avi', constants.RECORDING_FOURCC, constants.RECORDING_FPS, (constants.WIDTH, constants.HEIGHT))
-vid = utils.Video("Pi")
-#vid = utils.Video("cam")
+#vid = utils.Video("Pi")
+vid = utils.Video("cam")
 vid.start()
 
 
@@ -100,6 +99,7 @@ try:
             cv.putText(frame, f'~distToTarget: {int((dist_from_center/avg_side) * 4)}ft; ({approx_lat}, {approx_lon})', (10, 110), constants.FONT, 1, (0, 255, 255), 2, cv.LINE_4)
 
         out.write(frame) # write out frame w/ debug lines
+        cv.imshow("stream", frame)
 
         print(State(state))
 
@@ -128,7 +128,7 @@ try:
             case State.BRAKE.value:
                 if time.time() - startTime > constants.CENTERING_TIMEOUT:
                     state = State.BRAKE_TO_AUTO.value
-                    drone.mode = VehicleMode("AUTO")
+                    drone.mode = VehicleMode("STABILIZE")
 
                 if len(contours) != 0:
                     if detect != False:
@@ -141,7 +141,7 @@ try:
 
                             if currentFound[detect[0]] >= constants.ALREADY_FOUND_MAX_THRESHOLD:
                                 state = State.BRAKE_TO_AUTO.value
-                                drone.mode = VehicleMode("AUTO")
+                                drone.mode = VehicleMode("STABILIZE")
                                 continue
 
                         print(f"New target {target_id}: {target_name} found")
@@ -175,7 +175,7 @@ try:
 
             
             case State.BRAKE_TO_AUTO.value:
-                if drone.mode.name == "AUTO":
+                if drone.mode.name == "STABILIZE":
                     state = State.AUTO_NOT_SCANNING.value
                     startTime = time.time()
 
@@ -189,6 +189,7 @@ try:
                 if time.time() - guidedTime > constants.MOVE_TIME:
                     state = State.GUIDED_TO_BRAKE.value
                     drone.mode = VehicleMode("BRAKE")
+        time.sleep(0.25)
 
 
 except KeyboardInterrupt:

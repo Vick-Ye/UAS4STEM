@@ -3,7 +3,7 @@ import numpy as np
 import cv2 as cv
 import math, time
 import constants
-#from picamera2 import Picamera2
+from picamera2 import Picamera2
 
 #Preprocessing opencv
 sift = cv.xfeatures2d.SIFT_create()
@@ -25,13 +25,14 @@ class Video:
     def __init__(self, type):
         self.type = type
         if type == "Pi":
+            print("Using picamera")
             self.vid = Picamera2()
         else:
             self.vid = cv.VideoCapture(0)
 
     def start(self):
         if self.type == "Pi":
-            self.vid.video_configuration.controls.FrameRate = constants.CAMERA_FRAMERATE
+            self.vid.video_configuration.controls.FrameRate = constants.CAMERA_FPS
             self.vid.configure(self.vid.create_video_configuration({"size": (constants.WIDTH, constants.HEIGHT), "format": constants.CAMERA_FORMAT}))
             self.vid.set_controls({
                 "ExposureTime": constants.EXPOSURE,
@@ -39,15 +40,22 @@ class Video:
                 "Saturation": constants.SATURATION,
                 "Contrast": constants.CONTRAST,
             })
+            self.vid.start()
+        else:
+            if not self.vid.isOpened():
+                print("Failed to open camera")
+                exit();
 
-        self.vid.start()
         print("Video start")
 
     def getFrame(self):
         if self.type == "Pi":
             return self.vid.capture_array()
         else:
-            return self.vid.read()
+            ret, frame = self.vid.read()
+
+            cv.waitKey(1)
+            return frame
 
     def release(self):
         self.vid.release()
@@ -61,8 +69,8 @@ def detectSIFT(frame):
         ratio = constants.RATIO_TEST_VALUES[i]
         matches = bf.knnMatch(siftDesc[i], desc, k=2) # https://docs.opencv.org/3.4/dc/dc3/tutorial_py_matcher.html
         validMatches = []
+        avr = 0
         if len(matches) != 0 and len(matches[0]) == 2:
-            avr = 0
             for m, n in matches:
                 if min(m.distance / n.distance, n.distance / m.distance) < ratio:
                 #if min(m.distance / n.distance, n.distance / m.distance) < ratio and cv.pointPolygonTest(contour, kp[n.queryIdx].pt, True) <= 0:
@@ -98,13 +106,13 @@ def findPOI(frame):
         if cv.contourArea(hull) == 0:
             continue
         solidity = abs(cv.contourArea(contour) / cv.contourArea(hull))
-        if abs(solidity - 1) > SOLIDITY_MAX_THRESHOLD:
+        if abs(solidity - 1) > constants.SOLIDITY_MAX_THRESHOLD:
             continue
 
         #check approx
         epsilon = constants.CONTOUR_POLYDP_EPSILON * cv.arcLength(contour, True)
         approx = cv.approxPolyDP(contour, epsilon, True)
-        if math.abs(4-len(approx)) > constants.SIDE_NUM_THRESHOLD:
+        if abs(4-len(approx)) > constants.SIDE_NUM_THRESHOLD:
             continue
 
         if hierarchy[0][i][3] != -1:
@@ -135,9 +143,9 @@ def create_local_coordinate(vehicle, north, east, down): # function converts fee
 
     return LocationGlobal(final_lat, final_lon, final_alt)
 
-def calculate_target_gps(vehicle, dx_dist, dy_dist): # function takes in dx dy feet and gives new GPS coordinates
+def calculate_target_gps(vehicle, dx_dist, dy_dist, dx, dy): # function takes in dx dy feet and gives new GPS coordinates
     screen_angle = math.degrees(math.atan2(dy, dx))
-    global_angle_deg = -screen_angle + 90 + drone.heading
+    global_angle_deg = -screen_angle + 90 + vehicle.heading
     global_angle_rad = math.radians(global_angle_deg)
 
     total_dist_ft = math.sqrt(dx_dist**2 + dy_dist**2)
@@ -164,7 +172,7 @@ def calculate_target_gps(vehicle, dx_dist, dy_dist): # function takes in dx dy f
     
     return target_lat, target_lon
 
-def arm_takeoff(altitude, vehicle): # in feet
+def arm_takeoff(vehicle, altitude): # in feet
     convertedAlt = altitude * constants.FEET_TO_METERS # in meters
 
     while not vehicle.is_armable:
