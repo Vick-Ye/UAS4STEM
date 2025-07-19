@@ -27,9 +27,9 @@ print("Begin PICAM setup")
 
 centerX = constants.WIDTH/2
 centerY = constants.HEIGHT/2
-out = cv.VideoWriter('output.avi', constants.RECORDING_FOURCC, constants.RECORDING_FPS, (constants.WIDTH,constants.HEIGHT))
-#vid = utils.Video("Pi")
-vid = utils.Video("cam")
+out = cv.VideoWriter('output.avi', constants.RECORDING_FOURCC, constants.RECORDING_FPS, (constants.WIDTH, constants.HEIGHT))
+vid = utils.Video("Pi")
+#vid = utils.Video("cam")
 vid.start()
 
 

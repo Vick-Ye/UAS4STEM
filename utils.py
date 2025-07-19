@@ -3,7 +3,7 @@ import numpy as np
 import cv2 as cv
 import math, time
 import constants
-from picamera2 import Picamera2
+#from picamera2 import Picamera2
 
 #Preprocessing opencv
 sift = cv.xfeatures2d.SIFT_create()
@@ -40,7 +40,7 @@ class Video:
                 "Contrast": constants.CONTRAST,
             })
 
-            self.vid.start()
+        self.vid.start()
         print("Video start")
 
     def getFrame(self):
