@@ -129,6 +129,7 @@ try:
                 if time.time() - startTime > constants.CENTERING_TIMEOUT:
                     state = State.BRAKE_TO_AUTO.value
                     drone.mode = VehicleMode("STABILIZE")
+                    continue
 
                 if len(contours) != 0:
                     if detect != False:
