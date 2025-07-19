@@ -65,6 +65,8 @@ def detectSIFT(frame):
     best = 0
     bestID = -1
     bestMatches = False
+    if len(desc) == 0:
+        return False
     for i in range(constants.TARGET_NUM):
         ratio = constants.RATIO_TEST_VALUES[i]
         matches = bf.knnMatch(siftDesc[i], desc, k=2) # https://docs.opencv.org/3.4/dc/dc3/tutorial_py_matcher.html

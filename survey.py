@@ -1,5 +1,4 @@
 from dronekit import connect, VehicleMode, LocationGlobal, mavutil
-import dronekit_sitl
 import time, math, traceback
 from enum import Enum
 from datetime import datetime
@@ -170,7 +169,7 @@ try:
                             continue
                         found.append(currentFound.index(maxFound))
                         state = State.BRAKE_TO_AUTO.value
-                        drone.mode = VehicleMode("STABILIZE")
+                        drone.mode = VehicleMode("AUTO")
 
 
             
@@ -207,4 +206,3 @@ cv.destroyAllWindows()
 print("Preparing to return and land")
 utils.set_mode(drone, "RTL")
 print("We done WOOOHOO (or not womp)")
-drone.close()
