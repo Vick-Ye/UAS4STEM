@@ -43,7 +43,7 @@ found = []
 currentFound = []
 dx, dy = 0, 0
 startTime = time.time()
-movingTime = time.time()
+guidedTime = time.time()
 dist_from_center = 0
 
 
@@ -163,13 +163,16 @@ try:
 
                         drone.simple_goto(new_loc, groundspeed=constants.STEP_SPEED)
                     else:
-                        print(f"Target {target_id} centered.")
-                        print(f"GPS coordinate: lat:{drone.location.global_frame.lat}, lon:{drone.location.global_frame.lon}")
-
                         maxFound = max(currentFound)
                         if maxFound < constants.FOUND_MIN_THRESHOLD:
                             continue
-                        found.append(currentFound.index(maxFound))
+
+                        target_id = currentFound.index(maxFound)
+
+                        print(f"Target {target_id} centered.")
+                        print(f"GPS coordinate: lat:{drone.location.global_frame.lat}, lon:{drone.location.global_frame.lon}")
+
+                        found.append(target_id)
                         state = State.BRAKE_TO_AUTO.value
                         drone.mode = VehicleMode("STABILIZE")
 
