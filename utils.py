@@ -65,7 +65,7 @@ def detectSIFT(frame):
     best = 0
     bestID = -1
     bestMatches = False
-    if len(desc) == 0:
+    if desc is None:
         return False
     for i in range(constants.TARGET_NUM):
         ratio = constants.RATIO_TEST_VALUES[i]
